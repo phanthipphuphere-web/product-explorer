@@ -1,9 +1,18 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CATEGORIES, ProductDraftSchema } from "@/lib/products";
-import type { Product, ProductDraft } from "@/lib/products";
+
+import {
+  CATEGORIES,
+  ProductDraftSchema,
+} from "@/lib/products";
+
+import type {
+  Product,
+  ProductDraft,
+} from "@/lib/products";
 
 type ProductFormProps = {
   editing: Product | null;
@@ -16,115 +25,253 @@ export default function ProductForm({
   onSave,
   onCancel,
 }: ProductFormProps) {
+
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isDirty, isValid },
+    formState: {
+      errors,
+      isDirty,
+      isValid,
+    },
   } = useForm<ProductDraft>({
     resolver: zodResolver(ProductDraftSchema),
     mode: "onTouched",
-    defaultValues: editing
-      ? {
-          title: editing.title,
-          price: editing.price,
-          stock: editing.stock,
-          category: editing.category,
-        }
-      : {
-          title: "",
-          price: undefined,
-          stock: undefined,
-        },
+
+    defaultValues: {
+      title: "",
+      price: 0,
+      stock: 0,
+      category: undefined,
+    },
   });
 
-  function saveProduct(values: ProductDraft) {
+  useEffect(() => {
+
+    if (editing) {
+
+      const category =
+        CATEGORIES.includes(
+          editing.category as
+            (typeof CATEGORIES)[number]
+        )
+          ? (editing.category as
+              (typeof CATEGORIES)[number])
+          : undefined;
+
+      reset({
+        title: editing.title,
+        price: editing.price,
+        stock: editing.stock,
+        category,
+      });
+
+    } else {
+
+      reset({
+        title: "",
+        price: 0,
+        stock: 0,
+        category: undefined,
+      });
+
+    }
+
+  }, [editing, reset]);
+
+  function saveProduct(
+    values: ProductDraft
+  ) {
+
     onSave(values);
-    reset();
+
+    if (!editing) {
+
+      reset({
+        title: "",
+        price: 0,
+        stock: 0,
+        category: undefined,
+      });
+
+    }
   }
 
   return (
-    <form onSubmit={handleSubmit(saveProduct)}>
-      <h2>{editing ? "แก้ไขสินค้า" : "เพิ่มสินค้า"}</h2>
+    <section className="card">
 
-      <div>
-        <label htmlFor="title">ชื่อสินค้า</label>
-        <input
-          id="title"
-          required
-          {...register("title")}
-          aria-invalid={!!errors.title}
-          aria-describedby="title-error"
-        />
-        <span id="title-error" role="alert">
-          {errors.title?.message}
-        </span>
+      <div className="card-header">
+
+        <div>
+
+          <h2 className="card-title">
+            {editing
+              ? "✏️ แก้ไขสินค้า"
+              : "➕ เพิ่มสินค้า"}
+          </h2>
+
+          <p className="card-description">
+            {editing
+              ? "แก้ไขรายละเอียดสินค้าแล้วกดบันทึก"
+              : "เพิ่มสินค้าใหม่เข้าสู่รายการ"}
+          </p>
+
+        </div>
+
       </div>
 
-      <div>
-        <label htmlFor="price">ราคา</label>
-        <input
-          id="price"
-          type="number"
-          step="0.01"
-          required
-          {...register("price", { valueAsNumber: true })}
-          aria-invalid={!!errors.price}
-          aria-describedby="price-error"
-        />
-        <span id="price-error" role="alert">
-          {errors.price?.message}
-        </span>
-      </div>
+      <form
+        onSubmit={handleSubmit(saveProduct)}
+      >
 
-      <div>
-        <label htmlFor="stock">จำนวนสินค้า</label>
-        <input
-          id="stock"
-          type="number"
-          required
-          {...register("stock", { valueAsNumber: true })}
-          aria-invalid={!!errors.stock}
-          aria-describedby="stock-error"
-        />
-        <span id="stock-error" role="alert">
-          {errors.stock?.message}
-        </span>
-      </div>
+        <div className="product-form-grid">
 
-      <div>
-        <label htmlFor="category">หมวดหมู่</label>
-        <select
-          id="category"
-          {...register("category")}
-          aria-invalid={!!errors.category}
-          aria-describedby="category-error"
-        >
-          <option value="">กรุณาเลือกหมวดหมู่</option>
+          <div className="field">
 
-          {CATEGORIES.map((category) => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
+            <label htmlFor="title">
+              ชื่อสินค้า
+            </label>
 
-        <span id="category-error" role="alert">
-          {errors.category?.message}
-        </span>
-      </div>
+            <input
+              id="title"
+              {...register("title")}
+              placeholder="เช่น iPhone 15"
+              aria-invalid={
+                !!errors.title
+              }
+            />
 
-      <div>
-        <button type="submit" disabled={!isDirty || !isValid}>
-          {editing ? "บันทึกการแก้ไข" : "เพิ่มสินค้า"}
-        </button>
+            {errors.title && (
+              <p className="error-message">
+                {errors.title.message}
+              </p>
+            )}
 
-        {editing && (
-          <button type="button" onClick={onCancel}>
-            ยกเลิก
+          </div>
+
+          <div className="field">
+
+            <label htmlFor="price">
+              ราคา
+            </label>
+
+            <input
+              id="price"
+              type="number"
+              step="0.01"
+              {...register("price", {
+                valueAsNumber: true,
+              })}
+              placeholder="0.00"
+              aria-invalid={
+                !!errors.price
+              }
+            />
+
+            {errors.price && (
+              <p className="error-message">
+                {errors.price.message}
+              </p>
+            )}
+
+          </div>
+
+          <div className="field">
+
+            <label htmlFor="stock">
+              จำนวนสินค้า
+            </label>
+
+            <input
+              id="stock"
+              type="number"
+              {...register("stock", {
+                valueAsNumber: true,
+              })}
+              placeholder="0"
+              aria-invalid={
+                !!errors.stock
+              }
+            />
+
+            {errors.stock && (
+              <p className="error-message">
+                {errors.stock.message}
+              </p>
+            )}
+
+          </div>
+
+          <div className="field">
+
+            <label htmlFor="category">
+              หมวดหมู่
+            </label>
+
+            <select
+              id="category"
+              {...register("category")}
+              aria-invalid={
+                !!errors.category
+              }
+            >
+
+              <option value="">
+                เลือกหมวดหมู่
+              </option>
+
+              {CATEGORIES.map(
+                (category) => (
+                  <option
+                    key={category}
+                    value={category}
+                  >
+                    {category}
+                  </option>
+                )
+              )}
+
+            </select>
+
+            {errors.category && (
+              <p className="error-message">
+                {errors.category.message}
+              </p>
+            )}
+
+          </div>
+
+        </div>
+
+        <div className="form-actions">
+
+          <button
+            className="btn btn-success"
+            type="submit"
+            disabled={
+              !isDirty || !isValid
+            }
+          >
+            {editing
+              ? "💾 บันทึกการแก้ไข"
+              : "➕ เพิ่มสินค้า"}
           </button>
-        )}
-      </div>
-    </form>
+
+          {editing && (
+            <button
+              className="btn btn-secondary"
+              type="button"
+              onClick={onCancel}
+            >
+              ยกเลิก
+            </button>
+          )}
+
+        </div>
+
+      </form>
+
+    </section>
   );
 }
